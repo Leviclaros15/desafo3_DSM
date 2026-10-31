@@ -15,7 +15,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.aprendeapp.controller.ResourceController
 import kotlinx.coroutines.launch
 
@@ -142,7 +144,12 @@ fun MainScreen(
                         items(displayedResources) { resource ->
                             val resourceIdStr = resource.id.toString()
                             val isFav = controller.isFavorite(resourceIdStr)
-                            val userRating = controller.getRating(resourceIdStr)
+
+                            // Obtenemos la calificación específica de este usuario
+                            val userRating = controller.getRating(resourceIdStr, userEmail)
+
+                            // Obtenemos el promedio y el total de votos globales
+                            val (avgRating, totalVotes) = controller.getResourceAverage(resourceIdStr)
 
                             Card(modifier = Modifier.fillMaxWidth()) {
                                 Column(
@@ -152,11 +159,41 @@ fun MainScreen(
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalAlignment = Alignment.Top
                                     ) {
+                                        // Miniatura con Coil y Placeholder automático si la URL falla o está vacía
+                                        AsyncImage(
+                                            model = resource.imagen.ifBlank { null },
+                                            contentDescription = "Imagen del recurso",
+                                            modifier = Modifier
+                                                .size(64.dp)
+                                                .padding(top = 4.dp),
+                                            contentScale = ContentScale.Crop,
+                                            placeholder = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_gallery),
+                                            error = androidx.compose.ui.res.painterResource(android.R.drawable.ic_menu_report_image)
+                                        )
+
                                         Column(modifier = Modifier.weight(1f)) {
-                                            Text(text = resource.titulo, style = MaterialTheme.typography.titleLarge)
+                                            // TÍTULO Y PROMEDIO AL LADO
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                Text(
+                                                    text = resource.titulo,
+                                                    style = MaterialTheme.typography.titleLarge,
+                                                    modifier = Modifier.weight(1f, fill = false)
+                                                )
+                                                if (totalVotes > 0) {
+                                                    Text(
+                                                        text = String.format("%.1f (%d)", avgRating, totalVotes),
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            }
+
                                             Spacer(modifier = Modifier.height(4.dp))
                                             Text(text = "Tipo: ${resource.tipo}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
                                             Spacer(modifier = Modifier.height(4.dp))
@@ -179,7 +216,7 @@ fun MainScreen(
                                     Divider()
                                     Spacer(modifier = Modifier.height(8.dp))
 
-                                    // Sistema de calificación por estrellas corregido
+                                    // Sistema de calificación por estrellas interactivo y único por usuario
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -193,7 +230,10 @@ fun MainScreen(
                                         ) {
                                             for (i in 1..5) {
                                                 IconButton(
-                                                    onClick = { controller.rateResource(resourceIdStr, i) },
+                                                    onClick = {
+                                                        // Pasamos el correo del usuario para evitar spam de votos
+                                                        controller.rateResource(resourceIdStr, i, userEmail)
+                                                    },
                                                     modifier = Modifier.size(32.dp)
                                                 ) {
                                                     Icon(

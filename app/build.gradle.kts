@@ -2,7 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
+dependencies {
+    // ... tus otras dependencias existentes (Retrofit, Compose, Material3, etc.)
 
+    // Agrega esta línea para Coil Compose:
+    implementation("io.coil-kt:coil-compose:2.6.0")
+}
 android {
     namespace = "com.example.aprendeapp"
     compileSdk {
