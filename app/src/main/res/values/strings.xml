@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">AprendeApp</string>
 </resources>
+
+<resources>
+<string name="app_name">AprendeApp</string>
+<string name="welcome_message">¡Bienvenido a AprendeApp!</string>
+<string name="hint_email">Correo electrónico</string>
+<string name="hint_password">Contraseña</string>
+<string name="btn_login">Iniciar Sesión</string>
+<string name="btn_register">Registrarse</string>
+<string name="error_password_rules">La contraseña debe tener mínimo 12 caracteres, una mayúscula, una minúscula, un número y un carácter especial.</string>
+</resources>
