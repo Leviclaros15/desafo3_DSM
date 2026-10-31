@@ -110,4 +110,16 @@ class ResourceController(context: Context? = null) {
             }
         }
     }
+    private val ratingPrefs: SharedPreferences? = context?.getSharedPreferences("RatingsPrefs", Context.MODE_PRIVATE)
+
+    fun rateResource(resourceId: String, rating: Int) {
+        ratingPrefs?.edit()?.putInt("rating_$resourceId", rating)?.apply()
+        // Forzamos un pequeño cambio para que la UI se actualice
+        resourceList = resourceList.toList()
+    }
+
+    fun getRating(resourceId: String): Int {
+        return ratingPrefs?.getInt("rating_$resourceId", 0) ?: 0
+    }
 }
+
