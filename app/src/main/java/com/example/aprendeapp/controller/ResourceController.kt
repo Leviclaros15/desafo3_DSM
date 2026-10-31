@@ -1,5 +1,7 @@
 package com.example.aprendeapp.controller
 
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,13 +12,44 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class ResourceController {
+class ResourceController(context: Context? = null) {
     var resourceList by mutableStateOf<List<Resource>>(emptyList())
         private set
     var isLoading by mutableStateOf(false)
         private set
     var errorMessage by mutableStateOf<String?>(null)
         private set
+
+    // --- NUEVO: Gestión de Favoritos ---
+    private val prefs: SharedPreferences? = context?.getSharedPreferences("FavoritesPrefs", Context.MODE_PRIVATE)
+    var favoriteIds = mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    init {
+        // Cargar los favoritos guardados previamente al iniciar el controlador
+        prefs?.let {
+            val savedFavs = it.getStringSet("fav_ids", emptySet()) ?: emptySet()
+            favoriteIds.value = savedFavs
+        }
+    }
+
+    fun toggleFavorite(resourceId: String) {
+        val currentFavs = favoriteIds.value.toMutableSet()
+        if (currentFavs.contains(resourceId)) {
+            currentFavs.remove(resourceId)
+        } else {
+            currentFavs.add(resourceId)
+        }
+        favoriteIds.value = currentFavs
+
+        // Guardar cambios en SharedPreferences
+        prefs?.edit()?.putStringSet("fav_ids", currentFavs)?.apply()
+    }
+
+    fun isFavorite(resourceId: String): Boolean {
+        return favoriteIds.value.contains(resourceId)
+    }
+    // ----------------------------------
 
     fun fetchResources() {
         CoroutineScope(Dispatchers.IO).launch {

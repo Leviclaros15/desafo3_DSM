@@ -13,10 +13,11 @@ import com.example.aprendeapp.controller.UserController
 fun AppNavigation() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val resourceController = remember { ResourceController() }
+    val resourceController = remember { ResourceController(context) }
     val userController = remember { UserController(context) }
 
     var currentUserRole by remember { mutableStateOf("Estudiante") }
+    var currentUserEmail by remember { mutableStateOf("") } // Guardamos el correo activo
 
     NavHost(navController = navController, startDestination = "login") {
 
@@ -27,6 +28,7 @@ fun AppNavigation() {
                     val role = userController.loginUser(email, password)
                     if (role != null) {
                         currentUserRole = role
+                        currentUserEmail = email // Almacenamos el correo del usuario actual
                         Toast.makeText(context, "¡Bienvenido! Rol: $role", Toast.LENGTH_SHORT).show()
                         val destination = if (role == "Docente") "teacher_panel" else "main_screen"
                         navController.navigate(destination) {
@@ -57,12 +59,18 @@ fun AppNavigation() {
             )
         }
 
-        // 3. Pantalla Principal (Estudiante)
+        // 3. Pantalla Principal (Estudiante / General)
         composable("main_screen") {
             MainScreen(
                 controller = resourceController,
+                userEmail = currentUserEmail, // Pasamos el correo al menú lateral
                 onNavigateToTeacherPanel = {
                     navController.navigate("teacher_panel")
+                },
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true } // Limpia todo el historial al cerrar sesión
+                    }
                 },
                 isTeacher = (currentUserRole == "Docente")
             )
@@ -71,7 +79,13 @@ fun AppNavigation() {
         // 4. Panel Docente (CRUD Completo)
         composable("teacher_panel") {
             TeacherDashboardScreen(
-                controller = resourceController
+                controller = resourceController,
+                userEmail = currentUserEmail,
+                onLogout = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
             )
         }
     }
