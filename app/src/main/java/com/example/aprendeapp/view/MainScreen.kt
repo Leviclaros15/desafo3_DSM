@@ -1,5 +1,8 @@
 package com.example.aprendeapp.view
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.aprendeapp.controller.ResourceController
@@ -33,6 +37,7 @@ fun MainScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var searchQuery by remember { mutableStateOf("") }
+    val context = LocalContext.current // Contexto para abrir intents del navegador
 
     // Estado para saber si estamos mostrando solo los favoritos
     var showOnlyFavorites by remember { mutableStateOf(false) }
@@ -151,7 +156,21 @@ fun MainScreen(
                             // Obtenemos el promedio y el total de votos globales
                             val (avgRating, totalVotes) = controller.getResourceAverage(resourceIdStr)
 
-                            Card(modifier = Modifier.fillMaxWidth()) {
+                            // Tarjeta clickeable para abrir el enlace del recurso en el navegador
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        if (!resource.enlace.isNullOrBlank()) {
+                                            try {
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(resource.enlace))
+                                                context.startActivity(intent)
+                                            } catch (e: Exception) {
+                                                // Manejo de URL inválida si ocurre
+                                            }
+                                        }
+                                    }
+                            ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
