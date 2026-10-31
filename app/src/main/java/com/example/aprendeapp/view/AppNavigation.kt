@@ -1,29 +1,39 @@
 package com.example.aprendeapp.view
 
+import android.widget.Toast
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.aprendeapp.controller.ResourceController
+import com.example.aprendeapp.controller.UserController
 
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val context = LocalContext.current
     val resourceController = remember { ResourceController() }
+    val userController = remember { UserController(context) }
 
-    // Variable para simular o almacenar el rol actual del usuario autenticado
-    var userRole by remember { mutableStateOf("Estudiante") } // O "Docente"
+    var currentUserRole by remember { mutableStateOf("Estudiante") }
 
     NavHost(navController = navController, startDestination = "login") {
 
-        // 1. Pantalla de Login
+        // 1. Pantalla de Login con verificación real
         composable("login") {
             LoginScreen(
-                onLoginSuccess = { email ->
-                    // Redirigir según el rol del usuario
-                    val destination = if (userRole == "Docente") "teacher_panel" else "main_screen"
-                    navController.navigate(destination) {
-                        popUpTo("login") { inclusive = true } // Elimina el login del historial
+                onLoginSuccess = { email, password ->
+                    val role = userController.loginUser(email, password)
+                    if (role != null) {
+                        currentUserRole = role
+                        Toast.makeText(context, "¡Bienvenido! Rol: $role", Toast.LENGTH_SHORT).show()
+                        val destination = if (role == "Docente") "teacher_panel" else "main_screen"
+                        navController.navigate(destination) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    } else {
+                        Toast.makeText(context, "Correo o contraseña incorrectos", Toast.LENGTH_LONG).show()
                     }
                 },
                 onNavigateToRegister = {
@@ -32,24 +42,29 @@ fun AppNavigation() {
             )
         }
 
-        // 2. Pantalla de Registro
+        // 2. Pantalla de Registro con guardado real
         composable("register") {
             RegisterScreen(
-                onRegisterSuccess = {
-                    // Volver al login tras un registro exitoso
-                    navController.popBackStack()
+                onRegisterSuccess = { email, password, role ->
+                    val success = userController.registerUser(email, password, role)
+                    if (success) {
+                        Toast.makeText(context, "Registro exitoso. Inicia sesión.", Toast.LENGTH_SHORT).show()
+                        navController.popBackStack()
+                    } else {
+                        Toast.makeText(context, "El correo ya está registrado.", Toast.LENGTH_SHORT).show()
+                    }
                 }
             )
         }
 
-        // 3. Pantalla Principal (Vista Estudiante)
+        // 3. Pantalla Principal (Estudiante)
         composable("main_screen") {
             MainScreen(
                 controller = resourceController,
                 onNavigateToTeacherPanel = {
                     navController.navigate("teacher_panel")
                 },
-                isTeacher = (userRole == "Docente")
+                isTeacher = (currentUserRole == "Docente")
             )
         }
 

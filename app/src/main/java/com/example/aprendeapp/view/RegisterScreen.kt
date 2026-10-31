@@ -9,15 +9,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.aprendeapp.model.validatePassword // Ajusta según tu paquete
 
 @Composable
-fun RegisterScreen(onRegisterSuccess: () -> Unit) {
+fun RegisterScreen(onRegisterSuccess: (String, String, String) -> Unit) {
     val context = LocalContext.current
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("Estudiante") } // "Estudiante" o "Docente"
-    var expanded by remember { mutableStateOf(false) }
+    var selectedRole by remember { mutableStateOf("Estudiante") }
 
     Column(
         modifier = Modifier
@@ -46,7 +44,6 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Selector de Rol 간단
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -64,9 +61,14 @@ fun RegisterScreen(onRegisterSuccess: () -> Unit) {
 
         Button(
             onClick = {
-                if (validatePassword(password)) {
-                    Toast.makeText(context, "¡Registro exitoso como $selectedRole!", Toast.LENGTH_SHORT).show()
-                    onRegisterSuccess()
+                val minLength = password.length >= 12
+                val hasUpper = password.any { it.isUpperCase() }
+                val hasLower = password.any { it.isLowerCase() }
+                val hasDigit = password.any { it.isDigit() }
+                val hasSpecial = password.any { !it.isLetterOrDigit() }
+
+                if (minLength && hasUpper && hasLower && hasDigit && hasSpecial) {
+                    onRegisterSuccess(email, password, selectedRole)
                 } else {
                     Toast.makeText(
                         context,
